@@ -17,7 +17,11 @@ internal class RpcHookHelper
     private static readonly OpCode[] Ldc = { OpCodes.Ldc_I4_0, OpCodes.Ldc_I4_1, OpCodes.Ldc_I4_2, OpCodes.Ldc_I4_3, OpCodes.Ldc_I4_4, OpCodes.Ldc_I4_5, OpCodes.Ldc_I4_6, OpCodes.Ldc_I4_7, OpCodes.Ldc_I4_8 };
     private static readonly OpCode[] Ldarg = { OpCodes.Ldarg_0, OpCodes.Ldarg_1, OpCodes.Ldarg_2, OpCodes.Ldarg_3 };
 
+    #if ANDROID
+    internal static Detour Generate(ModRPC modRPC)
+    #else
     internal static Hook Generate(ModRPC modRPC)
+    #endif
     {
         MethodInfo executingMethod = modRPC.TargetMethod;
         Type[] parameters = executingMethod.GetParameters().Select(p => p.ParameterType).ToArray();
@@ -63,7 +67,11 @@ internal class RpcHookHelper
         ilg.Emit(OpCodes.Ret);
 
         _senders.Add(new DetouredSender(modRPC));
+        #if ANDROID
+        return new Detour(executingMethod, m);
+        #else
         return new Hook(executingMethod, m);
+        #endif
     }
 
     private static DetouredSender GetSender(int index) => _senders[index];

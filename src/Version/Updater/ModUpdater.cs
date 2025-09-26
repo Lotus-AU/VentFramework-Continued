@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using BepInEx;
+using UnityEngine;
 using VentLib.Logging;
 using VentLib.Utilities.Extensions;
 using VentLib.Version.Git;
@@ -17,7 +18,11 @@ public class ModUpdater
 {
     private static StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(ModUpdater));
     private static Regex _regex = new("/github\\.com\\/(.*)\\/(.*)\\.git");
+    #if ANDROID
+    private static DirectoryInfo _backupsDirectory = new(Path.Combine(Application.persistentDataPath, "VentBackups"));
+    #else
     private static DirectoryInfo _backupsDirectory = new(Path.Combine(Paths.GameRootPath, "Backups"));
+    #endif
     
     private GitVersion currentVersion;
     private string repositoryOwner;

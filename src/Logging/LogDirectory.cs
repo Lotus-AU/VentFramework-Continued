@@ -5,19 +5,35 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using BepInEx;
+using UnityEngine;
+using VentLib.Utilities.Attributes;
 using VentLib.Utilities.Extensions;
 
 namespace VentLib.Logging;
 
+[LoadStatic]
 public class LogDirectory
 {
     public static string Directory
     {
         get => _path;
-        set => _directory = ValidateDirectory(new DirectoryInfo(Path.Combine(Paths.GameRootPath, _path = value)));
+        #if ANDROID
+        set => _directory = ValidateDirectory(new DirectoryInfo(Path.Combine(Application.persistentDataPath, _path = value)), true);
+        #else 
+        set => _directory = ValidateDirectory(new DirectoryInfo(Path.Combine(Paths.GameRootPath, _path = value)), true);
+        #endif
     }
     private static string _path = "";
-    private static DirectoryInfo _directory = new(Path.Combine(Paths.GameRootPath, "logs"));
+    private static DirectoryInfo _directory;
+
+    static LogDirectory()
+    {
+        #if ANDROID
+        Directory = Path.Combine(Application.persistentDataPath, "vf_logs");
+        #else
+        Directory = Path.Combine(Application.persistentDataPath, "logs");
+        #endif
+    }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)
     {

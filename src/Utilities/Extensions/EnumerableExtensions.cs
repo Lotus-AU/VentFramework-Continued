@@ -12,7 +12,13 @@ namespace VentLib.Utilities.Extensions;
 
 public static class EnumerableExtensions
 {
+    #if ANDROID
+    private static StandardLogger? _log;
+    private static StandardLogger log => _log ??= LoggerFactory.GetLogger<StandardLogger>(typeof(EnumerableExtensions));
+    #else
     private static StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(EnumerableExtensions));
+    #endif
+    
     /// <summary>
     /// Maps a sequence into a new type, keeping all non-null values.
     /// </summary>

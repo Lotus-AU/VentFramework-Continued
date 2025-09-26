@@ -12,7 +12,12 @@ namespace VentLib.Utilities;
 
 public class Async
 {
+    #if ANDROID
+    private static StandardLogger? _log;
+    private static StandardLogger log => _log ??= LoggerFactory.GetLogger<StandardLogger>(typeof(Async));
+    #else
     private static StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(Async));
+    #endif
     internal static AUCWrapper AUCWrapper { get; } = new();
 
     /// <summary>

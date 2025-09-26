@@ -66,7 +66,11 @@ public class DefaultLogConfig
                 .SubOption(sub => sub
                     .Name("Log Directory")
                     .Description("Directory for storing log files.")
+                    #if ANDROID
+                    .Value("vf_logs")
+                    #else
                     .Value("logs")
+                    #endif
                     .IOSettings(settings => settings.UnknownValueAction = ADEAnswer.Allow)
                     .Build())
                 .SubOption(sub => sub
