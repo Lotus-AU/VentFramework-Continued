@@ -27,6 +27,7 @@ internal sealed class BepInExLogListener: ILogListener
         BepInEx.Logging.Logger.Listeners.Remove(consoleLog);
         BepInEx.Logging.Logger.Listeners.Add(interceptor);
 
+        NoDepLogger.Info($"{log is DefaultLogger} - {log.GetType()}");
         if (log is not DefaultLogger defaultLogger) return;
         
         ModifyAccumulator(defaultLogger.Accumulators);

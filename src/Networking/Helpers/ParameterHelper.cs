@@ -88,14 +88,9 @@ internal static class ParameterHelper
             return new BatchReader(reader);
         if (parameter.IsAssignableTo(typeof(IList)))
         {
-            NoDepLogger.Info($"{parameter.ToString()}");
-            NoDepLogger.Info("c1");
             Type genericType = parameter.GetGenericArguments()[0];
-            NoDepLogger.Info("c2");
             object objectList = Activator.CreateInstance(parameter)!;
-            NoDepLogger.Info("c3");
             MethodInfo add = AccessTools.Method(parameter, "Add");
-            NoDepLogger.Info("c4");
 
             ushort amount = reader.ReadUInt16();
             for (uint i = 0; i < amount; i++)
@@ -106,14 +101,9 @@ internal static class ParameterHelper
 
         if (parameter.IsAssignableTo(typeof(IRpcWritable)))
         {
-            NoDepLogger.Info($"{parameter.ToString()}");
-            NoDepLogger.Info("c1");
             BindingFlags completeFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
-            NoDepLogger.Info("c2");
             Type rpcableType = parameter.GetGenericArguments().Any() ? parameter.GetGenericArguments()[0] : parameter;
-            NoDepLogger.Info("c3");
             object rpcable = rpcableType.GetConstructor(completeFlags, Array.Empty<Type>())!.Invoke(null);
-            NoDepLogger.Info("c4");
             return rpcableType.GetMethod("Read", completeFlags, [typeof(MessageReader)])!.Invoke(rpcable, [reader])!;
         }
 

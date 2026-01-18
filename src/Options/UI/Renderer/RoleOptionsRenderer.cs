@@ -53,7 +53,7 @@ public class RoleOptionsRenderer : IRoleOptionRender
                     categoryHeaderMasked.name = "ModdedCategory";
                     categoryHeaderMasked.SetHeader(undefinedOption.Name(), 20);
                     categoryHeaderMasked.transform.localScale = Vector3.one * 0.63f;
-                    categoryHeaderMasked.transform.localPosition = new Vector3(-0.903f, Height, -2f);
+                    categoryHeaderMasked.transform.localPosition = new Vector3(-0.45f, Height - 0.2f, -2f);
                     undefinedOption.Header.IfPresent(header => header.gameObject.Destroy());
                     undefinedOption.Header = UnityOptional<CategoryHeaderMasked>.NonNull(categoryHeaderMasked);
                     PreRender(opt, null!, menu);

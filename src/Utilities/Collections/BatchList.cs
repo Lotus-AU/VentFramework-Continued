@@ -31,36 +31,53 @@ public class BatchList<T>: List<T>, IBatchSendable<BatchList<T>> where T: IRpcSe
     public BatchEnd Write(BatchWriter batchWriter)
     {
         batchWriter.Write(Count);
-        if (Count == 0) return batchWriter.EndBatch();
-        itemSize.OrElseSet(() =>
-        {
-            T sample = this[0];
-            MessageWriter writer = MessageWriter.Get();
-            sample.Write(writer);
-            return writer.Length;
-        });
+        if (Count == 0)
+            return batchWriter.EndBatch();
 
-        int length = itemSize.Get();
-        if (length == 0) length = 1;
-        if (length > NetworkRules.MaxPacketSize - 24)
-            throw new ConstraintException($"Length of singular item cannot exceed max packet size ({length} > {NetworkRules.MaxPacketSize})");
-        int batchItemCount = (NetworkRules.MaxPacketSize - 24) / length;
-        int batches = Mathf.CeilToInt((float)Count / batchItemCount);
-        if (batches > 65534) throw new ConstraintException($"BatchList exceeds maximum number of batches ({batches} > 65534)");
+        int safePacketLimit = NetworkRules.MaxPacketSize - 64;
 
-        int itemIndex = 0;
-        for (int i = 0; i < batches; i++)
+        int index = 0;
+
+        while (index < Count)
         {
-            batchWriter = batchWriter.NextBatch();
-            batchWriter.Write(Math.Min(batchItemCount, Count - itemIndex));
-            for (int j = 0; j < batchItemCount && itemIndex < Count; j++)
+            int batchSize = 0;
+            int batchItemCount = 0;
+
+            int startIndex = index;
+
+            while (index < Count)
             {
-                batchWriter.Write(this[itemIndex++]);
+                MessageWriter temp = MessageWriter.Get();
+                this[index].Write(temp);
+                int indexMessageSize = temp.Length;
+
+                if (indexMessageSize > safePacketLimit)
+                    throw new ConstraintException(
+                        $"Single item exceeds max packet size ({indexMessageSize} bytes)");
+
+                if (batchSize + indexMessageSize > safePacketLimit)
+                    break;
+
+                batchSize += indexMessageSize;
+                batchItemCount++;
+                index++;
+                temp.Recycle();
             }
+
+            batchWriter.Write(batchItemCount);
+
+            for (int i = 0; i < batchItemCount; i++)
+            {
+                batchWriter.Write(this[startIndex + i]);
+            }
+
+            if (index < Count)
+                batchWriter = batchWriter.NextBatch();
         }
 
         return batchWriter.EndBatch();
     }
+
 
     public BatchList<T> Read(BatchReader batchReader)
     {

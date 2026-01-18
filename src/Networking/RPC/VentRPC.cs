@@ -1,6 +1,9 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Hazel;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using UnityEngine;
 using VentLib.Logging;
 using VentLib.Networking.Helpers;
 using VentLib.Networking.Interfaces;
@@ -9,6 +12,7 @@ using VentLib.Options;
 using VentLib.Utilities;
 using VentLib.Utilities.Collections;
 using VentLib.Utilities.Extensions;
+using Object = UnityEngine.Object;
 
 // ReSharper disable RedundantAssignment
 
@@ -41,7 +45,35 @@ public static class VentRPC
     {
         Option option = networkedOption.GetOption();
         if (option is NullOption) return;
+
+        string oldText =
+            DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.LobbyChangeSettingNotification, new Il2CppReferenceArray<Il2CppSystem.Object>([
+                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.FullName()}</font>",
+                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.GetValueText()}</font>"
+            ]));
         option.SetValue(networkedOption.GetIndex());
+
+        if (!HudManager.InstanceExists) return;
+        string newText =
+            DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.LobbyChangeSettingNotification, new Il2CppReferenceArray<Il2CppSystem.Object>([
+                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.FullName()}</font>",
+                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.GetValueText()}</font>"
+            ]));
+
+        var notifier = HudManager.Instance.Notifier;
+
+        if (notifier.activeMessages.ToArray().Any(lnm => lnm.Text.text == oldText))
+            notifier.activeMessages.ToArray().First(lnm => lnm.Text.text == oldText).UpdateMessage(newText);
+        
+        else
+        {
+            LobbyNotificationMessage newMessage = Object.Instantiate<LobbyNotificationMessage>(notifier.notificationMessageOrigin, Vector3.zero, Quaternion.identity, notifier.transform);
+            newMessage.transform.localPosition = new Vector3(0f, 0f, -2f);
+            newMessage.SetUp(newText, notifier.settingsChangeSprite, notifier.settingsChangeColor, (System.Action)(() => { notifier.OnMessageDestroy(newMessage); }));
+            notifier.ShiftMessages();
+            notifier.AddMessageToQueue(newMessage);
+        }
+        SoundManager.Instance.PlaySoundImmediate(notifier.settingsChangeSound, false, 1f, 1f, null);
     }
 
     internal class NetworkedOption: IRpcSendable<NetworkedOption>

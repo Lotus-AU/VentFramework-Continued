@@ -29,10 +29,10 @@ public class LogDirectory
     static LogDirectory()
     {
         #if ANDROID
-        Directory = Path.Combine(Application.persistentDataPath, "vf_logs");
+        Directory = "vf_logs";
         #else
-        Directory = Path.Combine(Application.persistentDataPath, "logs");
-        #endif
+        Directory = "logs";
+#endif
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)
