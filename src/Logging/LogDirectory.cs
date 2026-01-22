@@ -17,14 +17,18 @@ public class LogDirectory
     public static string Directory
     {
         get;
-        set => _directory = ValidateDirectory(new DirectoryInfo(Path.Combine(Vents.BasePath, field = value)), true);
+        set
+        {
+            field = value;
+            _directory = ValidateDirectory(new DirectoryInfo(value), true);
+        }
     }
 
     private static DirectoryInfo _directory;
 
     static LogDirectory()
     {
-        Directory = "vf_logs";
+        Directory = Path.Combine(Vents.BasePath, "vf_logs");
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)
