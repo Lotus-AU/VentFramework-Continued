@@ -19,12 +19,8 @@ namespace VentLib.Options;
 
 public class Option: IRpcSendable<Option>
 {
-    #if ANDROID
     private static StandardLogger? _log;
     private static StandardLogger Log => _log ??= LoggerFactory.GetLogger<StandardLogger>(typeof(Option));
-    #else
-    private static StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(Option));
-    #endif
     
     private static ModRPC _modRPC = Vents.FindRPC((uint)VentCall.SyncSingleOption)!;
     // ReSharper disable once InconsistentNaming

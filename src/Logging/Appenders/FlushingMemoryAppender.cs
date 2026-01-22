@@ -11,12 +11,8 @@ namespace VentLib.Logging.Appenders;
 
 public class FlushingMemoryAppender: InMemoryAppender
 {
-    #if ANDROID
     private static StandardLogger? _log;
-    private static StandardLogger log => _log ??= LoggerFactory.GetLogger<StandardLogger>(typeof(FlushingMemoryAppender));
-    #else
-    private static readonly StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(FlushingMemoryAppender));
-    #endif
+    private static StandardLogger LOG => _log ??= LoggerFactory.GetLogger<StandardLogger>(typeof(FlushingMemoryAppender));
     
     private DirectoryInfo TargetDirectory { get; }
     public string FileNamePattern;
@@ -42,11 +38,8 @@ public class FlushingMemoryAppender: InMemoryAppender
     public FlushingMemoryAppender(string directoryPath, string filenamePattern, LogLevel? minLevel = null)
     {
         FileNamePattern = filenamePattern;
-        #if ANDROID
-        TargetDirectory = new DirectoryInfo(Path.Combine(Application.persistentDataPath, directoryPath));
-        #else
-        TargetDirectory = new DirectoryInfo(directoryPath);
-        #endif
+        TargetDirectory = new DirectoryInfo(Path.Combine(Vents.BasePath, directoryPath));
+
         if (!TargetDirectory.Exists) TargetDirectory.Create();
         MinLevel = minLevel ?? LogLevel.Info;
         flushingThread = new Thread(FlushMemory) { IsBackground = true };
@@ -81,7 +74,7 @@ public class FlushingMemoryAppender: InMemoryAppender
             }
             catch (Exception exception)
             {
-                log.Exception(exception);
+                LOG.Exception(exception);
             }
             finally
             {

@@ -47,7 +47,7 @@ public abstract class TypePaddingAccumulator: ILogAccumulator
             
             if (remaining < 0)
             {
-                reverseList.AddRange(splitQualifier[..(i+1)].Reverse().Select(q => q.Length > 0 ? q[0].ToString() : ""));
+                reverseList.AddRange(splitQualifier[..(i+1)].AsEnumerable().Reverse().Select(q => q.Length > 0 ? q[0].ToString() : ""));
                 break;
             }
             

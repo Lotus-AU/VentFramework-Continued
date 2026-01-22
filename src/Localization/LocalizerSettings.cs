@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Reflection;
 using BepInEx;
@@ -20,20 +21,12 @@ public class LocalizerSettings
         OptionManager manager = new(Assembly.GetExecutingAssembly(), "locale.config", OptionManagerFlags.IgnorePreset);
         Option languageFolderOption = new OptionBuilder().Name("Language Folder")
             .Description("Folder where translations are stored")
-            #if ANDROID
             .Value("VentLanguages")
-            #else
-            .Value("Languages")
-            #endif
             .IOSettings(settings => settings.UnknownValueAction = ADEAnswer.Allow)
             .BuildAndRegister(manager);
 
         LanguageFolder = languageFolderOption.GetValue<string>();
-        #if ANDROID
-        LanguageDirectory = new DirectoryInfo(Path.Combine(Application.persistentDataPath, LanguageFolder));
-        #else
-        LanguageDirectory = new DirectoryInfo(Path.Combine(Paths.GameRootPath, LanguageFolder));
-        #endif
+        LanguageDirectory = new DirectoryInfo(Path.Combine(Vents.BasePath, LanguageFolder));
         if (!LanguageDirectory.Exists) LanguageDirectory.Create();
     }
 
