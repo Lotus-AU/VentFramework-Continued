@@ -9,6 +9,11 @@ namespace VentLib.Commands;
 
 public class CommandRunner
 {
+    /// <summary>
+    /// The prefix text for all command instances for all mods.
+    /// </summary>
+    public static string Prefix = "/";
+    
     public static CommandRunner Instance { get; private set; } = null!;
     internal Dictionary<string, List<Command>> Commands = new();
     internal Dictionary<string, List<Command>> CaseSensitiveCommands = new();

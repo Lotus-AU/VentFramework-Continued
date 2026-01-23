@@ -19,6 +19,7 @@ public class CommandContext
     
     internal CommandContext(PlayerControl source, string message)
     {
+        message = message.Trim();
         OriginalMessage = message;
         string[] split = message.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         Alias = split.Length > 0 ? split[0] : string.Empty;
