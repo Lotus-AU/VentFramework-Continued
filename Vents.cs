@@ -6,6 +6,7 @@ using System.Reflection;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using BepInEx;
+using UnityEngine;
 using VentLib.Commands;
 using VentLib.Localization;
 using VentLib.Logging;
@@ -26,6 +27,7 @@ namespace VentLib;
 [BepInProcess("Among Us.exe")]
 public partial class Vents : BasePlugin
 {
+    public static string BasePath => OperatingSystem.IsAndroid() ? Application.persistentDataPath : Paths.GameRootPath;
     public static readonly uint[] BuiltinRPCs = Enum.GetValues<VentCall>().Select(rpc => (uint)rpc).ToArray();
     internal static VersionControl VersionControl { get; } = new();
     public static CommandRunner CommandRunner = new();

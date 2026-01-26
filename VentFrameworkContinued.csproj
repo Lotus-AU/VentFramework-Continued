@@ -10,32 +10,21 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/music-discussion/VentFramework-Continued/</RepositoryUrl>
-        <AmongUs>D:\Games\AmongUs\steam\Lotus</AmongUs>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
         <GitVersion>false</GitVersion>
         <DocumentationFile>bin\Debug\VentFrameworkContinued.xml</DocumentationFile>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <GamePlatform Condition="'$(GamePlatform)' == ''">Steam</GamePlatform>
-        <GameVersion Condition="'$(GamePlatform)' == 'Steam'">2025.9.9</GameVersion>
-        <GameVersion Condition="'$(GamePlatform)' == 'Itch'">2025.9.9</GameVersion>
-
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition="'$(AmongUs)' == ''">
+        <AmongUs>D:\Games\AmongUs\steam\Lotus</AmongUs>
     </PropertyGroup>
 
     <ItemGroup>
         <EmbeddedResource Include=".\assets\**\*" />
     </ItemGroup>
-
-    <PropertyGroup Condition=" '$(Platform)' == 'Android' ">
-        <DefineConstants>TRACE;ANDROID</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
-        <DefineConstants>TRACE;PC</DefineConstants>
-    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Costura.Fody" Version="5.7.0">
@@ -49,8 +38,7 @@
         </PackageReference>
         <PackageReference Include="Pastel" Version="4.1.0" />
         <PackageReference Include="Samboy063.Cpp2IL.Core" Version="2022.1.0-pre-release.19" />
-        <PackageReference Condition="$(Platform)=='Android'" Include="AmongUs.GameLibs.Android" Version="2025.9.9" PrivateAssets="all" />
-        <PackageReference Condition="$(Platform)=='AnyCPU'" Include="AmongUs.GameLibs.Steam" Version="2025.10.14" PrivateAssets="all" />
+        <PackageReference Include="AmongUs.GameLibs.Steam" Version="2025.10.14" PrivateAssets="all" />
         <PackageReference Include="BepInEx.AutoPlugin" Version="1.1.0" PrivateAssets="all" />
         <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.0.1" PrivateAssets="all" />
         <PackageReference Include="YamlDotNet" Version="12.3.1" PrivateAssets="all" />

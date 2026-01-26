@@ -18,11 +18,7 @@ public class ModUpdater
 {
     private static StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(ModUpdater));
     private static Regex _regex = new("/github\\.com\\/(.*)\\/(.*)\\.git");
-    #if ANDROID
-    private static DirectoryInfo _backupsDirectory = new(Path.Combine(Application.persistentDataPath, "VentBackups"));
-    #else
-    private static DirectoryInfo _backupsDirectory = new(Path.Combine(Paths.GameRootPath, "Backups"));
-    #endif
+    private static DirectoryInfo _backupsDirectory = new(Path.Combine(Vents.BasePath, "VentBackups"));
     
     private GitVersion currentVersion;
     private string repositoryOwner;

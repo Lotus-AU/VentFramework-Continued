@@ -2,8 +2,8 @@ extern alias JetbrainsAnnotations;
 using System;
 using System.Reflection;
 using HarmonyLib;
-using JetbrainsAnnotations::JetBrains.Annotations;
 using MonoMod.RuntimeDetour;
+using MonoMod.Utils;
 using VentLib.Logging;
 using VentLib.Networking.Helpers;
 using VentLib.Networking.Interfaces;
@@ -27,6 +27,7 @@ public class ModRPC
     internal DetouredSender Sender = null!;
     private readonly MethodBase trampoline;
     private readonly Func<object?> instanceSupplier;
+    private readonly Hook _hook;
 
     internal ModRPC(ModRPCAttribute attribute, MethodInfo targetMethod)
     {
@@ -42,12 +43,8 @@ public class ModRPC
             throw new ArgumentException($"Unable to Register: {targetMethod.Name}. Reason: VentLib does not current allow for methods without declaring types");
 
         Assembly = declaringType.Assembly;
-        #if ANDROID
-        Detour hook = RpcHookHelper.Generate(this);
-        #else
-        Hook hook = RpcHookHelper.Generate(this);
-        #endif 
-        trampoline = hook.GenerateTrampoline();
+        trampoline = new DynamicMethodDefinition(targetMethod).Generate();
+        _hook = RpcHookHelper.Generate(this);
 
         instanceSupplier = () =>
         {

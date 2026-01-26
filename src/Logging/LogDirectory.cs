@@ -16,23 +16,19 @@ public class LogDirectory
 {
     public static string Directory
     {
-        get => _path;
-        #if ANDROID
-        set => _directory = ValidateDirectory(new DirectoryInfo(Path.Combine(Application.persistentDataPath, _path = value)), true);
-        #else 
-        set => _directory = ValidateDirectory(new DirectoryInfo(Path.Combine(Paths.GameRootPath, _path = value)), true);
-        #endif
+        get;
+        set
+        {
+            field = value;
+            _directory = ValidateDirectory(new DirectoryInfo(value), true);
+        }
     }
-    private static string _path = "";
+
     private static DirectoryInfo _directory;
 
     static LogDirectory()
     {
-        #if ANDROID
-        Directory = "vf_logs";
-        #else
-        Directory = "logs";
-#endif
+        Directory = Path.Combine(Vents.BasePath, "vf_logs");
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)
