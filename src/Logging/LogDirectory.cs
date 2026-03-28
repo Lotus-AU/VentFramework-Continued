@@ -16,19 +16,20 @@ public class LogDirectory
 {
     public static string Directory
     {
-        get;
+        get => _path;
         set
         {
-            field = value;
+            _path = value;
             _directory = ValidateDirectory(new DirectoryInfo(value), true);
         }
     }
-
+    
+    private static string _path = "";
     private static DirectoryInfo _directory;
 
     static LogDirectory()
     {
-        Directory = Path.Combine(Vents.BasePath, "vf_logs");
+        Directory = Path.Combine(Vents.BasePath, OperatingSystem.IsAndroid() ? "vf_logs" : "Logs");
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)

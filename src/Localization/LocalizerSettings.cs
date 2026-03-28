@@ -21,7 +21,7 @@ public class LocalizerSettings
         OptionManager manager = new(Assembly.GetExecutingAssembly(), "locale.config", OptionManagerFlags.IgnorePreset);
         Option languageFolderOption = new OptionBuilder().Name("Language Folder")
             .Description("Folder where translations are stored")
-            .Value("VentLanguages")
+            .Value(OperatingSystem.IsAndroid() ? "VentLanguages" : "Languages")
             .IOSettings(settings => settings.UnknownValueAction = ADEAnswer.Allow)
             .BuildAndRegister(manager);
 
