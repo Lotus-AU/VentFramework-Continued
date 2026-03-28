@@ -15,21 +15,20 @@ namespace VentLib.Logging;
 public class LogDirectory
 {
     public static string Directory
-    {
-        get => _path;
-        set
         {
-            _path = value;
-            _directory = ValidateDirectory(new DirectoryInfo(value), true);
+            get;
+            set
+            {
+                field = value;
+                _directory = ValidateDirectory(new DirectoryInfo(value), true);
+            }
         }
-    }
     
-    private static string _path = "";
     private static DirectoryInfo _directory;
 
     static LogDirectory()
     {
-        Directory = Path.Combine(Vents.BasePath, OperatingSystem.IsAndroid() ? "vf_logs" : "Logs");
+        Directory = Path.Combine(Vents.BasePath, OperatingSystem.IsAndroid() ? "vf_logs" : "logs");
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)
