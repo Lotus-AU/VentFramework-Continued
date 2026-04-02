@@ -17,8 +17,11 @@ public class DefaultLogConfig
 
     public FileLogConfig FileConfig;
 
+    public DefaultLogConfig Instance;
+
     public DefaultLogConfig()
     {
+        Instance = this;
         OptionManager manager = OptionManager.GetManager(file: "logging.txt", managerFlags:OptionManagerFlags.IgnorePreset);
         ConsoleLevel = new OptionBuilder()
             .Name("Console Level")

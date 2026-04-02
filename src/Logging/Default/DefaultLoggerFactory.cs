@@ -30,6 +30,8 @@ internal class DefaultLoggerFactory: ILoggerFactory
         loggers = new DefaultDictionary<Type, Logger>(ConstructLogger);
         logAppenders.Add(new ConsoleAppender(DefaultConfig.ConsoleLevel));
 
+        LogDirectory.UpdateDirectory(DefaultConfig.FileConfig.LogDirectory);
+        
         if (DefaultConfig.FileConfig.Enabled)
         {
             FlushingMemoryAppender memoryAppender = (FlushingMemoryAppender)DefaultConfig.FileConfig.CreateAppender();
