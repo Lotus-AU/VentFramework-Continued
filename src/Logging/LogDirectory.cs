@@ -14,7 +14,6 @@ using VentLib.Utilities.Extensions;
 
 namespace VentLib.Logging;
 
-[LoadStatic]
 public class LogDirectory
 {
     public static string Directory
@@ -29,15 +28,14 @@ public class LogDirectory
 
     private static DirectoryInfo _directory;
 
-    static LogDirectory()
-    {
-        Assembly executingAssembly = Assembly.GetExecutingAssembly();
-        string assemblyName = AssemblyUtils.GetAssemblyRefName(executingAssembly);
 
-        string logFolder = ((DefaultLoggerFactory)LoggerFactory.FactoryInstance).DefaultConfig.FileConfig.LogDirectory;
+    public static void UpdateDirectory(string logFolderName)
+    {
+        string assemblyName = AssemblyUtils.GetAssemblyRefName(Assembly.GetExecutingAssembly());
+        
         Directory = OperatingSystem.IsAndroid()
-            ? Path.Combine(Vents.BasePath, assemblyName, logFolder)
-            : Path.Combine(Vents.BasePath, logFolder);
+            ? Path.Combine(Vents.BasePath, assemblyName, logFolderName)
+            : Path.Combine(Vents.BasePath, logFolderName);
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)
