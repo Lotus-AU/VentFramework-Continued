@@ -25,48 +25,35 @@ public static class GeneralRPC
 
         // AmongUsClient.Instance.SendOrDisconnect(writer);
         // writer.Recycle();
-        MessageWriter? writer = null;
-        int num = 0;
-        
-        foreach (NetworkedPlayerInfo playerInfo in GameData.Instance.AllPlayers)
+        int messages = 0;
+        int packingLimit = AmongUsClient.Instance.GetMaxMessagePackingLimit();
+
+        MessageWriter writer = MessageWriter.Get(SendOption.Reliable);
+        writer.StartMessage((byte)(clientId == -1 ? 5 : 6));
+        writer.Write(AmongUsClient.Instance.GameId);
+        if (clientId != -1) writer.WritePacked(clientId);
+
+        foreach (NetworkedPlayerInfo playerinfo in GameData.Instance.AllPlayers)
         {
-            if (writer == null)
+            if (writer.Length > 500 || messages >= packingLimit)
             {
-                writer = MessageWriter.Get(sendOption);
-                writer.StartMessage((byte)(clientId == -1 ? 5 : 6));
-                writer.Write(AmongUsClient.Instance.GameId);
-
-                if (clientId != -1) writer.WritePacked(clientId);
-            }
-            int length = writer.Length;
-            int position = writer.Position;
-            writer.StartMessage(1);
-            writer.WritePacked(playerInfo.NetId);
-            playerInfo.Serialize(writer, false);
-            writer.EndMessage();
-            if (length > NetworkRules.MaxPacketSize)
-            {
-                if (num == 0)
-                {
-                    NoDepLogger.Fatal("1 Player ({0}) exceeded max packet size: {1}".Formatted(playerInfo.Object != null ? playerInfo.Object.name : playerInfo.PlayerName, 
-                        NetworkRules.MaxPacketSize));
-                }
-                else
-                {
-                    writer.Length = length;
-                    writer.Position = position;
-                }
-
-                num = 0;
+                messages = 0;
                 writer.EndMessage();
                 AmongUsClient.Instance.SendOrDisconnect(writer);
-                writer.Recycle();
-                writer = null;
+                writer.Clear(SendOption.Reliable);
+                writer.StartMessage((byte)(clientId == -1 ? 5 : 6));
+                writer.Write(AmongUsClient.Instance.GameId);
+                if (clientId != -1) writer.WritePacked(clientId);
             }
-            else num++;
+
+            writer.StartMessage(1);
+            writer.WritePacked(playerinfo.NetId);
+            playerinfo.Serialize(writer, false);
+            writer.EndMessage();
+            
+            messages++;
         }
 
-        if (writer == null) return;
         writer.EndMessage();
         AmongUsClient.Instance.SendOrDisconnect(writer);
         writer.Recycle();

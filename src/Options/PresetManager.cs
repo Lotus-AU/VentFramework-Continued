@@ -3,12 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AmongUs.GameOptions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VentLib.Logging;
 using VentLib.Logging.Default;
 using VentLib.Networking.RPC;
 using VentLib.Options.IO;
+using VentLib.Options.UI;
+using VentLib.Options.UI.Options;
 using VentLib.Utilities;
 using VentLib.Utilities.Attributes;
 using VentLib.Utilities.Collections;
@@ -24,11 +28,13 @@ namespace VentLib.Options;
 [LoadStatic]
 public static class PresetManager
 {
-    public static bool IsSwitchingPresets { get; private set; } = false;
+    public static bool IsSwitchingPresets { get; private set; }
+
+    public static bool AllowSaving => _allowSaving;
+    
     internal static Preset CurrentPreset => AllPresets[_currentPreset - 1];
 
-    private 
-        static readonly string[] RandomPresetNames =
+    private static readonly string[] RandomPresetNames =
     [
         "Chaos", "Anarchy", "Mayhem", "Chill", "Vibes", "Preset", "Custom"
     ];
@@ -36,9 +42,10 @@ public static class PresetManager
     private static readonly List<Preset> AllPresets;
 
     private static UnityOptional<GameSettingMenu> _lastInitialized = new();
-    private static int _savedPresetIndex = 1;
     private static int _currentPreset = 1;
     private static int _nextPresetID;
+
+    private static bool _allowSaving = true;
         
     private static Option _presetOption;
 
@@ -59,17 +66,18 @@ public static class PresetManager
         while (true)
         {
             _nextPresetID++;
-            string presetPath = Path.Combine(OptionManager.OptionPath, $"Preset{_nextPresetID}");
+            string presetPath = OperatingSystem.IsAndroid()
+                ? Path.Combine(OptionManager.OptionPath, OptionManager.AndroidOptionFolder, $"Preset{_nextPresetID}")
+                : Path.Combine(OptionManager.OptionPath, $"Preset{_nextPresetID}");
             DirectoryInfo presetDirectory = new(presetPath);
             if (presetDirectory.Exists) AllPresets.Add(new Preset(_nextPresetID));
             else break;
         }
         
-        CreatePreset("Default"); // The default preset everyone will start out with.
-        CreatePreset("Host"); // Used for when joining to sync over options.
+        if (!AllPresets.Any()) 
+            CreatePreset("Default"); // The default preset everyone will start out with.
         
         ChangePreset(_currentPreset);
-        _savedPresetIndex = _currentPreset;
     }
     
     public static void ChangePreset(string presetName)
@@ -78,10 +86,6 @@ public static class PresetManager
         if (existingPreset != null)
         {
             _currentPreset = AllPresets.IndexOf(existingPreset) + 1;
-            if (CurrentPreset.Name != "Host")
-            {
-                _savedPresetIndex = _currentPreset;
-            }
             FinishChangingPreset();
         }
         else
@@ -109,29 +113,30 @@ public static class PresetManager
     
     public static void DeletePreset(string presetName)
     {
-        if (presetName == "Host") throw new InvalidOperationException("Cannot delete the 'Host' preset.");
         Preset? targetPreset = AllPresets.FirstOrDefault(p => p.Name == presetName);
         if (targetPreset == null) return;
-        Async.Schedule(targetPreset.Delete, 2f);
+        targetPreset.Delete();
         AllPresets.Remove(targetPreset);
         
         AllPresets.ForEach((p, i) => p.ChangeID(i + 1));
-        if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count - 1;
-        FinishChangingPreset();
+        if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count;
+        _presetOption.SetHardValue(_currentPreset);
+        FinishChangingPreset(true);
     }
     public static void DeletePreset(int presetID)
     {
         Preset? targetPreset = AllPresets.FirstOrDefault(p => p.ID == presetID);
         if (targetPreset == null) return;
-        Async.Schedule(targetPreset.Delete, 2f);
+        targetPreset.Delete();
         AllPresets.Remove(targetPreset);
         
         AllPresets.ForEach((p, i) => p.ChangeID(i + 1));
-        if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count - 1;
-        FinishChangingPreset();
+        if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count;
+        _presetOption.SetHardValue(_currentPreset);
+        FinishChangingPreset(true);
     }
     
-    public static void CreatePreset(string presetName)
+    public static void CreatePreset(string presetName, bool resetSettings = false)
     {
         Preset? targetPreset = AllPresets.FirstOrDefault(p => p.Name == presetName);
         if (targetPreset != null)
@@ -139,15 +144,24 @@ public static class PresetManager
             NoDepLogger.Warn($"Preset named '{presetName}' already exists! Not creating a new one.");
             return;
         }
-        AllPresets.Add(new Preset(_nextPresetID, presetName));
+        AllPresets.Add(new Preset(_nextPresetID, presetName, resetSettings));
         _nextPresetID++;
     }
 
-    public static void SwitchFromHost()
+    public static void SwitchToHostMode()
     {
-        if (CurrentPreset.Name != "Host") return;
-        _currentPreset = _savedPresetIndex;
-        FinishChangingPreset();
+        if (!_allowSaving) return;
+        NoDepLogger.Debug("joining other player's lobby. saving current settings and disable option saving.");
+        FinishChangingPreset(true);
+        _allowSaving = false;
+    }
+
+    public static void SwitchFromHostMode()
+    {
+        if (_allowSaving) return;
+        NoDepLogger.Debug("back hosting. saving current settings and allow saving");
+        FinishChangingPreset(true);
+        _allowSaving = true;
     }
     
     internal static void EditSettingsMenu(GameSettingMenu menu)
@@ -246,12 +260,15 @@ public static class PresetManager
 
     private static void CyclePresets(GameSettingMenu menu, int offset)
     {
+        if (IsSwitchingPresets) return;
+        IsSwitchingPresets = true;
         _currentPreset += offset;
-        if (_currentPreset > AllPresets.Count) _currentPreset -= AllPresets.Count; // overflow by subtracting count
-        else if (_currentPreset < 1) _currentPreset += AllPresets.Count; // overflow by adding count
+        if (_currentPreset > AllPresets.Count) _currentPreset = 1; // overflow by subtracting count
+        else if (_currentPreset < 1) _currentPreset = AllPresets.Count; // overflow by adding count
         
         _presetOption.SetHardValue(_currentPreset);
-        FinishChangingPreset(); 
+        FinishChangingPreset();
+        IsSwitchingPresets = false;
     }
 
     private static IEnumerator AskToDelete()
@@ -266,7 +283,7 @@ public static class PresetManager
         infoTextBox.transform.localPosition = new(0f, 0f, -100f);
         infoTextBox.titleTexxt.text = "Delete Confirmation";
 
-        if (CurrentPreset.Name != "Host" && CurrentPreset.Name != "Default")
+        if (AllPresets.Count > 1)
         {
             // Async.Schedule(() =>
             // {
@@ -296,7 +313,7 @@ public static class PresetManager
         else
         {
             infoTextBox.SetOneButton();
-            infoTextBox.SetText($"Preset '{CurrentPreset.Name}' cannot be deleted.");
+            infoTextBox.SetText($"Preset '{CurrentPreset.Name}' cannot be deleted. You need to have at least 1 preset.");
             infoTextBox.button1Text.text = "OK";
             infoTextBox.button1.OnClick = new Button.ButtonClickedEvent();
             infoTextBox.button1.OnClick.AddListener((Action)infoTextBox.Close);
@@ -332,8 +349,30 @@ public static class PresetManager
         randomizeButton.OnClick.AddListener((Action)(() => createPreset.nameText.nameSource.SetText(RandomPresetNames.ToList().GetRandom())));
         randomizeButton.gameObject.SetActive(false);
         
+        var resetOption = new GameOptionBuilder()
+            .AddBoolean(false)
+            .Build<BoolOption>();
+        
+
+        GameOptionsMenu menu = _lastInitialized.Get().GameSettingsTab;
+
+        CheckboxGameSetting checkboxSettings = ScriptableObject.CreateInstance<CheckboxGameSetting>();
+        checkboxSettings.OptionName = BoolOptionNames.Invalid;
+        checkboxSettings.Type = OptionTypes.Checkbox;
+        ToggleOption toggleBehavior = UnityEngine.Object.Instantiate<ToggleOption>(menu.checkboxOrigin, Vector3.zero, Quaternion.identity, createPreset.transform);
+        toggleBehavior.name = "CustomSetting";
+        toggleBehavior.SetUpFromData(checkboxSettings, 20);
+        toggleBehavior.CheckMark.enabled = (bool)resetOption.GetValue();
+        toggleBehavior.TitleText.text = "Preset Settings are Default";
+        toggleBehavior.OnValueChanged = new Action<OptionBehaviour>(_ => { });
+        toggleBehavior.transform.localPosition = new Vector3(0.5f, -0.7f, 0f);
+        resetOption.Behaviour = UnityOptional<ToggleOption>.NonNull(toggleBehavior);
+        resetOption.BindPlusMinusButtons();
+        
         PassiveButton submitButton = createPreset.FindChild<PassiveButton>("SubmitButton");
         PassiveButton backButton = createPreset.FindChild<PassiveButton>("BackButton");
+        
+        toggleBehavior.SetClickMask(backButton.ClickMask);
 
         createPreset.nameText.nameSource.characterLimit = 12;
         
@@ -344,6 +383,7 @@ public static class PresetManager
             if (targetName == string.Empty) return;
             submitButton.gameObject.SetActive(false);
             backButton.gameObject.SetActive(false);
+            CreatePreset(targetName, resetOption.GetValue<bool>());
             ChangePreset(targetName);
             createPreset.Close();
         }));
@@ -369,40 +409,42 @@ public static class PresetManager
         createPreset.gameObject.Destroy();
     }
 
-    private static void FinishChangingPreset()
+    private static void FinishChangingPreset(bool wasDeleted = false)
     {
-        if (!_lastInitialized.Exists())
+        if (_lastInitialized.Exists())
         {
-            NoDepLogger.Warn("Unable to Finalize Preset Change.");
-            return;
+            NoDepLogger.Warn("not in lobby when changing presets");
+            GameSettingMenu menu = _lastInitialized.Get();
+            menu.FindChild<TextMeshPro>("GameSettingsLabel").text = CurrentPreset.Name;
+        }
+        OptionManager.OnChangePreset(wasDeleted);
+
+        if (CurrentPreset.ResetOnChange)
+        {
+            CurrentPreset.SetResetOnChangeFlag(false);
+            OptionManager.AllOptions.Values
+                .Where(o => !o.Manager?.Flags().HasFlag(OptionManagerFlags.IgnorePreset) ?? false)
+                .ForEach(o => o.SetValue(o.GetDefault()));
+            OptionManager.GetAllManagersForAllAssemblys()
+                .Where(m => !m.Flags().HasFlag(OptionManagerFlags.IgnorePreset))
+                .ForEach(m => m.DelaySave(0));
         }
 
-        GameSettingMenu menu = _lastInitialized.Get();
-        menu.FindChild<TextMeshPro>("GameSettingsLabel").text = CurrentPreset.Name;
-        IsSwitchingPresets = true;
-        OptionManager.OnChangePreset();
-
-        // Sync options over to modded players.
-        List<VentRPC.NetworkedOption> allOptions = OptionManager.AllOptions.Values
-            .Where(o => o.Manager?.Flags().HasFlag(OptionManagerFlags.SyncOverRpc) ?? false)
-            .Select(o => new VentRPC.NetworkedOption(o, o.Index.OrElse(0)))
-            .ToList();
-
-        VersionControl vc = VersionControl.Instance;
-        if (vc.PassedClients.Count == PlayerControl.AllPlayerControls.Count)
-            // Every player is modded.
-            Vents.FindRPC((uint)VentCall.SyncOptions)!.Send(null, new BatchList<VentRPC.NetworkedOption>(allOptions));
-        else
+        if (_lastInitialized.Exists())
         {
-            List<int> clientIds = [];
-            foreach (PlayerControl player in PlayerControl.AllPlayerControls)
-                if (vc.PassedClients.Contains(player.GetClientId()))
-                    // Filter for passed clients.
-                    clientIds.Add(player.GetClientId());
-            
-            if (clientIds.Any()) Vents.FindRPC((uint)VentCall.SyncOptions)!.Send(clientIds.ToArray(), new BatchList<VentRPC.NetworkedOption>(allOptions));
+            // Sync options over to modded players. (ONLY WHEN IN GAME)
+            VersionControl vc = VersionControl.Instance;
+
+            if (vc.PassedClients.Count > 0)
+            {
+                List<VentRPC.NetworkedOption> allOptions = OptionManager.AllOptions.Values
+                    .Where(o => o.Manager?.Flags().HasFlag(OptionManagerFlags.SyncOverRpc) ?? false)
+                    .Select(o => new VentRPC.NetworkedOption(o, o.Index.OrElse(0)))
+                    .ToList();   
+                Vents.FindRPC((uint)VentCall.SyncOptions)!.Send(null, new BatchList<VentRPC.NetworkedOption>(allOptions)); 
+            }
         }
-        
+
         IsSwitchingPresets = false;
     }
 
@@ -412,6 +454,7 @@ public static class PresetManager
 
 internal class Preset
 {
+    public bool ResetOnChange { get; private set; }
     public string Name { get; private set; }
     public int ID { get; private set; }
     
@@ -419,7 +462,7 @@ internal class Preset
     private DirectoryInfo presetDirectory;
     private FileInfo presetInfo;
     
-    public Preset(int presetID, string? presetName = null)
+    public Preset(int presetID, string? presetName = null, bool isNewSettngs = false)
     {
         Name = presetName ?? $"Preset{presetID}";
         ID = presetID;
@@ -439,6 +482,8 @@ internal class Preset
             using StreamReader streamReader = new(presetInfo.Open(FileMode.Open));
             Name = streamReader.ReadToEnd();
         }
+        
+        SetResetOnChangeFlag(isNewSettngs);
     }
 
     public void ChangeName(string newName)
@@ -451,15 +496,17 @@ internal class Preset
     public void ChangeID(int newID)
     {
         if (ID == newID) return; // Skip IOException
-        ID = newID;
-        presetDirectory.MoveTo(Path.Join(OptionManager.OptionPath, $"Preset{ID}"));
+        presetDirectory.MoveTo(Path.Join(OptionManager.OptionPath, $"Preset{newID}"));
         presetInfo = presetDirectory.GetFile("config.txt");
+        ID = newID;
     }
 
     public void Delete()
     {
         presetDirectory.Delete(true);
     }
+    
+    public void SetResetOnChangeFlag(bool flag) => ResetOnChange = flag;
 
     public string FolderName() => presetDirectory.Name;
 }

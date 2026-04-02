@@ -141,10 +141,10 @@ public class GameOptionBuilder : IOptionBuilder<GameOptionBuilder>
     }
 
     /// <summary>
-    /// Replaces the default + and - with a Checkmark instead. This is not compatible with any other options however.
-    /// This will reset the Option's values. Any other methods that change the values will make the game error when clicking the Chckmark.
+    /// Replaces the default + and - with a Checkmark instead. This is not compatible with any other options, however.
+    /// This will reset the Option's values. Any other methods that change the values will make the game error when clicking the Checkmark.
     /// </summary>
-    /// <param name="defaultValue">Whether or not the checkmarked should be checked by default.</param>
+    /// <param name="defaultValue">Whether the checkmarked should be checked by default.</param>
     /// <returns></returns>
     public GameOptionBuilder AddBoolean(bool defaultValue = true)
     {

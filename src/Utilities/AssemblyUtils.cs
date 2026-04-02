@@ -63,10 +63,16 @@ public static class AssemblyUtils
         }
     }
 
-    internal static string GetAssemblyRefName(Assembly assembly)
+    /// <summary>
+    /// Gets the name of an Assembly.<br/>
+    /// Caches the result in case of repeated use.
+    /// </summary>
+    /// <param name="assembly">The assembly instance to get the name of.</param>
+    /// <returns>The string name of the assembly.</returns>
+    public static string GetAssemblyRefName(Assembly assembly)
     {
         // return assembly == Vents.RootAssemby ? "root" : Vents.AssemblyNames.GetValueOrDefault(assembly, assembly.GetName().Name!);
-        return Vents.AssemblyNames.GetValueOrDefault(assembly, assembly.GetName().Name!);
+        return Vents.AssemblyNames.GetValueOrDefault(assembly, assembly.GetName().Name ?? assembly.GetName().FullName.Split(',')[0]);
     }
     
 }

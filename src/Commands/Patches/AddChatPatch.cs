@@ -22,13 +22,14 @@ internal static class AddChatPatch
     }
     
     [QuickPrefix(typeof(PlayerControl), nameof(PlayerControl.RpcSendChat), Priority.First)]
-    internal static bool HostCommandCheck(PlayerControl __instance, string chatText)
+    internal static bool HostCommandCheck(PlayerControl __instance, string chatText, ref bool __result)
     {
         if (!AmongUsClient.Instance.AmHost) return true;
         chatText = chatText.Trim(); // Trim spaces from chatText
         if (!chatText.StartsWith(CommandRunner.Prefix)) return true;
         if (!__instance.IsHost()) return true;
         CommandRunner.Instance.Execute(new CommandContext(__instance, chatText[CommandRunner.Prefix.Length..]));
+        __result = false;
         return false;
     }
 }

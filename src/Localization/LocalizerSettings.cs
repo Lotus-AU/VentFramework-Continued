@@ -5,6 +5,7 @@ using BepInEx;
 using UnityEngine;
 using VentLib.Options;
 using VentLib.Options.IO;
+using VentLib.Utilities;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -18,15 +19,20 @@ public class LocalizerSettings
     
     static LocalizerSettings()
     {
-        OptionManager manager = new(Assembly.GetExecutingAssembly(), "locale.config", OptionManagerFlags.IgnorePreset);
+        Assembly executingAssembly = Assembly.GetExecutingAssembly();
+        OptionManager manager = new(executingAssembly, "locale.config", OptionManagerFlags.IgnorePreset);
         Option languageFolderOption = new OptionBuilder().Name("Language Folder")
             .Description("Folder where translations are stored")
             .Value("VentLanguages")
             .IOSettings(settings => settings.UnknownValueAction = ADEAnswer.Allow)
             .BuildAndRegister(manager);
 
+        string assemblyName = OperatingSystem.IsWindows() ? string.Empty : AssemblyUtils.GetAssemblyRefName(executingAssembly);
+
         LanguageFolder = languageFolderOption.GetValue<string>();
-        LanguageDirectory = new DirectoryInfo(Path.Combine(Vents.BasePath, LanguageFolder));
+        LanguageDirectory = OperatingSystem.IsAndroid() 
+            ? new DirectoryInfo(Path.Combine(Vents.BasePath, assemblyName, LanguageFolder))
+            : new DirectoryInfo(Path.Combine(Vents.BasePath, LanguageFolder));
         if (!LanguageDirectory.Exists) LanguageDirectory.Create();
     }
 

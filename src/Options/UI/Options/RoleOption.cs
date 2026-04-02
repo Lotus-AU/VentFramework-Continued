@@ -74,7 +74,7 @@ public class RoleOption: GameOption, IGameOptionInstance
     {
         MaximumOption?.Decrement();
         Behaviour.IfPresent(b => {
-            b.countText.text = MaximumOption.GetValueText();
+            b.countText.text = MaximumOption?.GetValueText();
         });
     }
 
@@ -95,8 +95,8 @@ public class RoleOption: GameOption, IGameOptionInstance
     internal void BindPlusMinusButtons()
     {
         Behaviour.IfPresent(b => {
-            if (Children.FirstOrDefault(child => child!.Key() == "Maximum", null) != null) {
-                MaximumOption = (Children.Find(child => child.Key() == "Maximum") as FloatOption)!;
+            MaximumOption = Children.Find(child => child.Key() == "Maximum") as FloatOption;
+            if (MaximumOption != null) {
                 PassiveButton plusButtonNumber = b.FindChild<PassiveButton>("Role #/PlusButton");
                 PassiveButton minusButtonNumber = b.FindChild<PassiveButton>("Role #/MinusButton");
 
@@ -119,28 +119,31 @@ public class RoleOption: GameOption, IGameOptionInstance
             } else {
                 b.transform.FindChild("Role #").gameObject.SetActive(false);
             }
-            PercentageOption = (Children.Find(child => child.Key() == "Percentage") as FloatOption)!;
-            PassiveButton plusButton = b.FindChild<PassiveButton>("Chance %/PlusButton");
-            PassiveButton minusButton = b.FindChild<PassiveButton>("Chance %/MinusButton");
+            PercentageOption = Children.Find(child => child.Key() == "Percentage") as FloatOption;
+            if (PercentageOption != null)
+            {
+                PassiveButton plusButton = b.FindChild<PassiveButton>("Chance %/PlusButton");
+                PassiveButton minusButton = b.FindChild<PassiveButton>("Chance %/MinusButton");
 
-            plusButton.OnClick = new Button.ButtonClickedEvent();
-            plusButton.OnMouseOut = new UnityEngine.Events.UnityEvent();
-            plusButton.OnMouseOver = new UnityEngine.Events.UnityEvent();
-            plusButton.OnClick.AddListener((Action)IncrementChance);
-            SpriteRenderer plusActiveSprite = plusButton.FindChild<SpriteRenderer>("ButtonSprite");
-            plusButton.OnMouseOut.AddListener((Action)(() => plusActiveSprite.color = Color.white));
-            plusButton.OnMouseOver.AddListener((Action)(() => plusActiveSprite.color = Color.cyan));
+                plusButton.OnClick = new Button.ButtonClickedEvent();
+                plusButton.OnMouseOut = new UnityEngine.Events.UnityEvent();
+                plusButton.OnMouseOver = new UnityEngine.Events.UnityEvent();
+                plusButton.OnClick.AddListener((Action)IncrementChance);
+                SpriteRenderer plusActiveSprite = plusButton.FindChild<SpriteRenderer>("ButtonSprite");
+                plusButton.OnMouseOut.AddListener((Action)(() => plusActiveSprite.color = Color.white));
+                plusButton.OnMouseOver.AddListener((Action)(() => plusActiveSprite.color = Color.cyan));
 
-            minusButton.OnClick = new Button.ButtonClickedEvent();
-            minusButton.OnMouseOut = new UnityEngine.Events.UnityEvent();
-            minusButton.OnMouseOver = new UnityEngine.Events.UnityEvent();
-            minusButton.OnClick.AddListener((Action)DecrementChance);
-            SpriteRenderer minusActiveSprite = minusButton.FindChild<SpriteRenderer>("ButtonSprite");
-            minusButton.OnMouseOut.AddListener((Action)(() => minusActiveSprite.color = Color.white));
-            minusButton.OnMouseOver.AddListener((Action)(() => minusActiveSprite.color = Color.cyan));
-            // b.chanceText.text = PercentageOption.GetValueText();
-            b.chanceText.text = $"{PercentageOption.GetValue()}%";
-            // Value.Map(v => v.Value).IfNotPresent(() => b.chanceText.text = "0%");
+                minusButton.OnClick = new Button.ButtonClickedEvent();
+                minusButton.OnMouseOut = new UnityEngine.Events.UnityEvent();
+                minusButton.OnMouseOver = new UnityEngine.Events.UnityEvent();
+                minusButton.OnClick.AddListener((Action)DecrementChance);
+                SpriteRenderer minusActiveSprite = minusButton.FindChild<SpriteRenderer>("ButtonSprite");
+                minusButton.OnMouseOut.AddListener((Action)(() => minusActiveSprite.color = Color.white));
+                minusButton.OnMouseOver.AddListener((Action)(() => minusActiveSprite.color = Color.cyan));
+                // b.chanceText.text = PercentageOption.GetValueText();
+                b.chanceText.text = $"{PercentageOption.GetValue()}%";
+                // Value.Map(v => v.Value).IfNotPresent(() => b.chanceText.text = "0%");
+            } else b.transform.FindChild("Chance %").gameObject.SetActive(false);
         });
     }
 

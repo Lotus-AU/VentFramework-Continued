@@ -111,6 +111,7 @@ public static class RoleOptionController
             header.gameObject.SetActive(header.name != "LotusCategory"); 
         });
         AllTabs(true).ForEach(tab => tab.Setup(_lastInitialized.Get()));
+        SettingsOptionController._lastInitialized.IfPresent(gsm => gsm.RoleSettingsButton.gameObject.SetActive(AllTabs(true).Any()));
 
         _renderer.RenderTabs(AllTabs(true), menu);
         
@@ -136,6 +137,7 @@ public static class RoleOptionController
         _lastInitialized.Get().RoleChancesSettings.transform.DestroyChildren();
         AllTabs().ForEach(tab => tab.Setup(_lastInitialized.Get()));
         _renderer.RenderTabs(AllTabs(), _lastInitialized.Get());
+        SettingsOptionController._lastInitialized.IfPresent(gsm => gsm.RoleSettingsButton.gameObject.SetActive(AllTabs(true).Any()));
     }
 
     internal static void DoRender(RolesSettingsMenu menu)
@@ -146,7 +148,9 @@ public static class RoleOptionController
             menu.scrollBar.ContentYBounds.max = _renderer.GetChancesHeight();
             return;
         }
-        CurrentTab.GetOptions().ForEach(child => {
+
+        List<GameOption> currentOptions = CurrentTab.GetOptions();
+        currentOptions.ForEach(child => {
             switch (child.OptionType) {
                 case OptionType.String:
                     (child as TextOption)!.HideMembers();
@@ -169,7 +173,7 @@ public static class RoleOptionController
         _renderer.SetHeight(-0.1f);
         string currentText = SearchBarController.CurrentText;
         if (currentText == "") CurrentTab.PreRender().ForEach((option, index) => RenderCheck(option, index, menu));
-        else CurrentTab.GetOptions().Where(o => o.name.ToLower().Contains(currentText)).SelectMany(opt => opt.GetDisplayedMembers()).ForEach((option, index) => RenderCheck(option, index, menu));
+        else currentOptions.Where(o => o.name.ToLower().Contains(currentText)).SelectMany(opt => opt.GetDisplayedMembers()).ForEach((option, index) => RenderCheck(option, index, menu));
         _renderer.PostRender(menu);
     }
 

@@ -26,7 +26,7 @@ public static class SettingsOptionController
 {
     private static readonly StandardLogger log = LoggerFactory.GetLogger<StandardLogger>(typeof(SettingsOptionController));
     private static IGameOptionRenderer OptionRenderer = new SettingsRenderer();
-    private static UnityOptional<GameSettingMenu> _lastInitialized = new();
+    internal static UnityOptional<GameSettingMenu> _lastInitialized = new();
     private static OrderedSet<Action<IControllerEvent>> _tabEvents = new();
     public static RenderOptions RenderOptions { get; set; } = new();
     private static IMainSettingTab _mainSettingsTab = null!;

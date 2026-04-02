@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using BepInEx;
 using UnityEngine;
+using VentLib.Logging.Default;
+using VentLib.Utilities;
 using VentLib.Utilities.Attributes;
 using VentLib.Utilities.Extensions;
 
@@ -28,7 +31,13 @@ public class LogDirectory
 
     static LogDirectory()
     {
-        Directory = Path.Combine(Vents.BasePath, "vf_logs");
+        Assembly executingAssembly = Assembly.GetExecutingAssembly();
+        string assemblyName = AssemblyUtils.GetAssemblyRefName(executingAssembly);
+
+        string logFolder = ((DefaultLoggerFactory)LoggerFactory.FactoryInstance).DefaultConfig.FileConfig.LogDirectory;
+        Directory = OperatingSystem.IsAndroid()
+            ? Path.Combine(Vents.BasePath, assemblyName, logFolder)
+            : Path.Combine(Vents.BasePath, logFolder);
     }
 
     public static IEnumerable<FileInfo> GetLogs(string regex, DirectoryInfo? dir = null)

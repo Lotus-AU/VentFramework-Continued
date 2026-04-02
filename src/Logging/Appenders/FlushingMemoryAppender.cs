@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using BepInEx;
 using UnityEngine;
+using VentLib.Utilities;
 
 namespace VentLib.Logging.Appenders;
 
@@ -37,8 +39,15 @@ public class FlushingMemoryAppender: InMemoryAppender
     
     public FlushingMemoryAppender(string directoryPath, string filenamePattern, LogLevel? minLevel = null)
     {
+        Assembly executingAssembly = Assembly.GetExecutingAssembly();
+        string assemblyName = OperatingSystem.IsWindows()
+            ? string.Empty
+            : AssemblyUtils.GetAssemblyRefName(executingAssembly);
+        
         FileNamePattern = filenamePattern;
-        TargetDirectory = new DirectoryInfo(Path.Combine(Vents.BasePath, directoryPath));
+        TargetDirectory = OperatingSystem.IsAndroid()
+            ? new DirectoryInfo(Path.Combine(Vents.BasePath, assemblyName, directoryPath))
+            : new DirectoryInfo(Path.Combine(Vents.BasePath, directoryPath));
 
         if (!TargetDirectory.Exists) TargetDirectory.Create();
         MinLevel = minLevel ?? LogLevel.Info;

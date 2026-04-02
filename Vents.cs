@@ -27,7 +27,7 @@ namespace VentLib;
 [BepInProcess("Among Us.exe")]
 public partial class Vents : BasePlugin
 {
-    public static string BasePath => OperatingSystem.IsAndroid() ? Application.persistentDataPath : Paths.GameRootPath;
+    public static string BasePath => OperatingSystem.IsAndroid() ? Environment.GetEnvironmentVariable("STAR_DATA_PATH")! : Paths.GameRootPath;
     public static readonly uint[] BuiltinRPCs = Enum.GetValues<VentCall>().Select(rpc => (uint)rpc).ToArray();
     internal static VersionControl VersionControl { get; } = new();
     public static CommandRunner CommandRunner = new();

@@ -18,8 +18,10 @@ namespace VentLib.Options;
 
 public class OptionManager
 {
-    public static string OptionPath => Paths.ConfigPath;
-    public static string DefaultFile = "options.txt";
+    public static string OptionPath => OperatingSystem.IsAndroid() ? Vents.BasePath : Paths.ConfigPath;
+    public const string AndroidOptionFolder = "vf_config";
+    public const string DefaultFile = "options.txt";
+    
     internal static Dictionary<Assembly, List<OptionManager>> Managers = new();
     internal static Dictionary<String, Option> AllOptions = new();
     
@@ -37,8 +39,20 @@ public class OptionManager
     {
         string name = AssemblyUtils.GetAssemblyRefName(assembly);
         string optionPath;
-        if (managerFlags.HasFlag(OptionManagerFlags.IgnorePreset)) optionPath = name == "root" ? OptionPath : Path.Combine(OptionPath, name);
-        else optionPath = Path.Combine(OptionPath, PresetManager.CurrentPreset.FolderName(), name == "root" ? "" : name);
+        if (OperatingSystem.IsAndroid())
+        {
+            if (managerFlags.HasFlag(OptionManagerFlags.IgnorePreset)) 
+                optionPath = Path.Combine(OptionPath, AndroidOptionFolder, name == "root" ? string.Empty : name);
+            else 
+                optionPath = Path.Combine(OptionPath, AndroidOptionFolder, PresetManager.CurrentPreset.FolderName(), name == "root" ? string.Empty : name);
+        }
+        else
+        {
+            if (managerFlags.HasFlag(OptionManagerFlags.IgnorePreset)) 
+                optionPath = name == "root" ? OptionPath : Path.Combine(OptionPath, name);
+            else 
+                optionPath = Path.Combine(OptionPath, PresetManager.CurrentPreset.FolderName(), name == "root" ? string.Empty : name);
+        }
         DirectoryInfo optionDirectory = new(optionPath);
         if (!optionDirectory.Exists) optionDirectory.Create();
         flags = managerFlags;
@@ -65,12 +79,15 @@ public class OptionManager
         return Managers.GetOrCompute(assembly, () => new List<OptionManager>());
     }
 
-    internal static void OnChangePreset()
+    public static List<OptionManager> GetAllManagersForAllAssemblys() => Managers.Values.SelectMany(m => m).ToList();
+
+    internal static void OnChangePreset(bool wasDeleted = false)
     {
         Managers.ForEach(kvp => kvp.Value.ForEach(m =>
         {
             if (m.flags.HasFlag(OptionManagerFlags.IgnorePreset)) return;
-            m.SaveAll(); // Save current settings.
+            if (!wasDeleted) 
+                m.SaveAll(); // Save current settings.
             string name = AssemblyUtils.GetAssemblyRefName(kvp.Key);
             
             // Reset File
@@ -119,6 +136,11 @@ public class OptionManager
         option.RegisterEventHandler(ChangeCallback);
         OptionHelpers.GetChildren(option).ForEach(o => Register(o, loadMode));
     }
+
+    public void ReloadFromFile()
+    {
+        
+    }
     
     public void RegisterEventHandler(Action<IOptionEvent> eventHandler) => optionEventHandlers.Add(eventHandler);
 
@@ -144,6 +166,7 @@ public class OptionManager
 
     internal void SaveAll(bool updateAll = true, string? fullName = null, int? saveIndex = null)
     {
+        if (!PresetManager.AllowSaving) return;
         if (fullName != null && fullName != file.FullName) return; // Stop saving for old files.
         if (saveIndex != null && saveIndex != SaveIndex) return; // Stop saving for old files.
         NoDepLogger.Trace($"Saving Options to \"{filePath}\"", "OptionSave");
@@ -154,10 +177,12 @@ public class OptionManager
 
     public void DelaySave(float delay = 10f, bool updateAll = true, string? fullName = null)
     {
+        if (!PresetManager.AllowSaving) return;
         if (saving) return;
         saving = true;
         SaveIndex++;
         int specificSaveIndex = SaveIndex;
+        fullName ??= file.FullName;
         Async.ScheduleThreaded(() =>
         {
             SaveAll(updateAll, fullName, specificSaveIndex);
