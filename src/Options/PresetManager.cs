@@ -86,7 +86,9 @@ public static class PresetManager
         if (existingPreset != null)
         {
             _currentPreset = AllPresets.IndexOf(existingPreset) + 1;
+            IsSwitchingPresets = true;
             FinishChangingPreset();
+            IsSwitchingPresets = false;
         }
         else
         {
@@ -102,7 +104,9 @@ public static class PresetManager
         if (existingPreset != null)
         {
             _currentPreset = presetID;
+            IsSwitchingPresets = true;
             FinishChangingPreset();
+            IsSwitchingPresets = false;
             NoDepLogger.Info($"Changed to Preset {CurrentPreset.Name}. {presetID}");
         }
         else
@@ -121,7 +125,9 @@ public static class PresetManager
         AllPresets.ForEach((p, i) => p.ChangeID(i + 1));
         if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count;
         _presetOption.SetHardValue(_currentPreset);
+        IsSwitchingPresets = true;
         FinishChangingPreset(true);
+        IsSwitchingPresets = false;
     }
     public static void DeletePreset(int presetID)
     {
@@ -133,7 +139,9 @@ public static class PresetManager
         AllPresets.ForEach((p, i) => p.ChangeID(i + 1));
         if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count;
         _presetOption.SetHardValue(_currentPreset);
+        IsSwitchingPresets = true;
         FinishChangingPreset(true);
+        IsSwitchingPresets = false;
     }
     
     public static void CreatePreset(string presetName, bool resetSettings = false)
@@ -467,7 +475,9 @@ internal class Preset
         Name = presetName ?? $"Preset{presetID}";
         ID = presetID;
         
-        string presetPath = Path.Join(OptionManager.OptionPath, $"Preset{presetID}");
+        string presetPath = OperatingSystem.IsAndroid()
+            ? Path.Combine(OptionManager.OptionPath, OptionManager.AndroidOptionFolder, $"Preset{presetID}")
+            : Path.Combine(OptionManager.OptionPath, $"Preset{presetID}");
         presetDirectory = new(presetPath);
         if (!presetDirectory.Exists) presetDirectory.Create();
 
