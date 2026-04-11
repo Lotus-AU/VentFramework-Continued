@@ -65,7 +65,7 @@ public static class MainThreadAnchor
     }
 
     /// <summary>
-    /// Schedules a task to to be rain on the main thread, then waits for its execution to finish
+    /// Schedules a task to be rain on the main thread, then waits for its execution to finish
     /// </summary>
     /// <param name="action">function to run on main thread</param>
     public static void ExecuteOnMainThread(Action action)
