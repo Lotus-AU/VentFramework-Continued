@@ -10,9 +10,9 @@ namespace VentLib.Commands;
 public class CommandRunner
 {
     /// <summary>
-    /// The prefix text for all command instances for all mods.
+    /// List of Prefixes for all mods to use.
     /// </summary>
-    public static string Prefix = "/";
+    public static HashSet<string> Prefixes = ["/"];
     
     public static CommandRunner Instance { get; private set; } = null!;
     internal Dictionary<string, List<Command>> Commands = new();
@@ -49,6 +49,8 @@ public class CommandRunner
         if (source.Flags.HasFlag(CommandFlag.LobbyOnly) && LobbyBehaviour.Instance == null) return false;
         if (source.Flags.HasFlag(CommandFlag.InGameOnly) && LobbyBehaviour.Instance != null) return false;
         // NoDepLogger.Debug($"c1 - alias null check");
+
+        if (!string.IsNullOrWhiteSpace(source.ForcePrefix) && !source.ForcePrefix.Equals(context.Prefix)) return false;
 
         if (context.Alias == null) return false;
         // NoDepLogger.Debug($"c2 - case senseitive check");

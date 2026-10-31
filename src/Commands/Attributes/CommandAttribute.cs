@@ -10,6 +10,7 @@ namespace VentLib.Commands.Attributes;
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
 public class CommandAttribute: Attribute
 {
+    public string ForcePrefix = string.Empty;
     private CommandFlag flags;
     private string[] aliases;
 
@@ -100,9 +101,11 @@ public class CommandAttribute: Attribute
             Aliases = aliases,
             Flags = flags,
             Instance = instance,
+            ForcePrefix = this.ForcePrefix,
             CommandReceiver = instance != null,
             Trampoline = instance != null ? AccessTools.Method(type, "Receive", new[] { typeof(PlayerControl), typeof(CommandContext) }) : null
         };
+        if (!string.IsNullOrEmpty(ForcePrefix)) CommandRunner.Prefixes.Add(ForcePrefix);
         if (parentCommand == null) runner.Register(command);
         else parentCommand.SubCommands.Add(command);
         
@@ -122,9 +125,10 @@ public class CommandAttribute: Attribute
             Flags = flags,
             Instance = instance,
             CommandReceiver = false,
+            ForcePrefix = this.ForcePrefix,
             Trampoline = method
         };
-        
+        if (!string.IsNullOrEmpty(ForcePrefix)) CommandRunner.Prefixes.Add(ForcePrefix);
         if (parentCommand == null) runner.Register(command);
         else parentCommand.SubCommands.Add(command);
     }

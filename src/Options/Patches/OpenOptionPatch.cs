@@ -24,6 +24,12 @@ internal static class OpenGameSettingsPatch
         SettingsOptionController.Start(__instance);
         SearchBarController.HandleOpen(__instance);
         PresetManager.EditSettingsMenu(__instance);
+        
+        if (GameManager.Instance.IsHideAndSeek())
+        {
+            __instance.RoleSettingsTab.OpenMenu(false);
+            __instance.RoleSettingsTab.gameObject.SetActive(false);
+        }
     }
 }
 

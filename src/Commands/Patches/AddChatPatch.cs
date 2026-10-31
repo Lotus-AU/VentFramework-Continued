@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using HarmonyLib;
 using VentLib.Logging.Default;
 using VentLib.Utilities.Extensions;
@@ -15,10 +16,14 @@ internal static class AddChatPatch
     {
         if (!AmongUsClient.Instance.AmHost) return true;
         chatText = chatText.Trim(); // Trim spaces from chatText
-        if (!chatText.StartsWith(CommandRunner.Prefix)) return true;
+        var prefix = CommandRunner.Prefixes
+            .OrderByDescending(p => p.Length)
+            .FirstOrOptional(chatText.StartsWith);
+        if (!prefix.Exists()) return true;
         if (sourcePlayer.IsHost()) return true;
-        CommandRunner.Instance.Execute(new CommandContext(sourcePlayer, chatText[CommandRunner.Prefix.Length..]));
-        return false; // hide command from host as well
+        var actual = prefix.Get();
+        CommandRunner.Instance.Execute(new CommandContext(sourcePlayer, chatText[actual.Length..], actual));
+        return actual == "/cmd"; // hide command from host as well
     }
     
     [QuickPrefix(typeof(PlayerControl), nameof(PlayerControl.RpcSendChat), Priority.First)]
@@ -26,10 +31,14 @@ internal static class AddChatPatch
     {
         if (!AmongUsClient.Instance.AmHost) return true;
         chatText = chatText.Trim(); // Trim spaces from chatText
-        if (!chatText.StartsWith(CommandRunner.Prefix)) return true;
+        var prefix = CommandRunner.Prefixes
+            .OrderByDescending(p => p.Length)
+            .FirstOrOptional(chatText.StartsWith);
+        if (!prefix.Exists()) return true;
         if (!__instance.IsHost()) return true;
-        CommandRunner.Instance.Execute(new CommandContext(__instance, chatText[CommandRunner.Prefix.Length..]));
+        var actual = prefix.Get();
+        CommandRunner.Instance.Execute(new CommandContext(__instance, chatText[actual.Length..], actual));
         __result = false;
-        return false;
+        return actual != "/cmd";
     }
 }

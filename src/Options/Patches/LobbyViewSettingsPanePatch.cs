@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using VentLib.Logging.Default;
 using VentLib.Options.Enum;
 using VentLib.Options.Events;
 using VentLib.Options.Extensions;
@@ -71,7 +72,6 @@ public class LobbyViewSettingsPanePatch
         var moddedSettingTab = __instance.FindChildOrEmpty<PassiveButton>("ModdedSettings");
         moddedSettingTab.IfPresent(p => p.SelectButton(false));
     }
-    
 
     private static void HijackRoleTab(LobbyViewSettingsPane pane)
     {
@@ -119,6 +119,7 @@ public class LobbyViewSettingsPanePatch
 
     private static void RefreshTabForSettings(LobbyViewSettingsPane pane)
     {
+        NoDepLogger.Info("reloading settings tab");
         GlobalRefresh(pane);
         IMainSettingTab? currentTab = SettingsOptionController.MainSettingsTab;
         if (currentTab == null) return;
@@ -180,6 +181,7 @@ public class LobbyViewSettingsPanePatch
 
     private static void RefreshTabForRole(LobbyViewSettingsPane pane)
     {
+        NoDepLogger.Info("reloading role tab");
         GlobalRefresh(pane);
         
         CategoryHeaderMasked categoryHeaderMasked = Object.Instantiate(pane.categoryHeaderOrigin, pane.settingsContainer);

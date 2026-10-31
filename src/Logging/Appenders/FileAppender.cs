@@ -22,7 +22,7 @@ public class FileAppender: ILogAppender
     
     public FileInfo CreateNewStream()
     {
-        FileInfo logFile = LogDirectory.CreateLog(FileNamePattern, TargetDirectory);
+        FileInfo logFile = LogDirectory.CreateLog(FileNamePattern, dir: TargetDirectory);
         FileStream = logFile.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
         return logFile;
     }

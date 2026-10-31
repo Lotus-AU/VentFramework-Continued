@@ -123,7 +123,7 @@ public static class PresetManager
         AllPresets.Remove(targetPreset);
         
         AllPresets.ForEach((p, i) => p.ChangeID(i + 1));
-        if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count;
+        if (_currentPreset > AllPresets.Count) _currentPreset = AllPresets.Count;
         _presetOption.SetHardValue(_currentPreset);
         IsSwitchingPresets = true;
         FinishChangingPreset(true);
@@ -137,7 +137,7 @@ public static class PresetManager
         AllPresets.Remove(targetPreset);
         
         AllPresets.ForEach((p, i) => p.ChangeID(i + 1));
-        if (_currentPreset >= AllPresets.Count) _currentPreset = AllPresets.Count;
+        if (_currentPreset > AllPresets.Count) _currentPreset = AllPresets.Count;
         _presetOption.SetHardValue(_currentPreset);
         IsSwitchingPresets = true;
         FinishChangingPreset(true);
@@ -355,7 +355,7 @@ public static class PresetManager
         randomizeButton.OnClick.m_PersistentCalls.Clear();
         randomizeButton.OnClick.RemoveAllListeners();
         randomizeButton.OnClick.AddListener((Action)(() => createPreset.nameText.nameSource.SetText(RandomPresetNames.ToList().GetRandom())));
-        randomizeButton.gameObject.SetActive(false);
+        randomizeButton.gameObject.SetActive(true);
         
         var resetOption = new GameOptionBuilder()
             .AddBoolean(false)
@@ -505,8 +505,11 @@ internal class Preset
 
     public void ChangeID(int newID)
     {
-        if (ID == newID) return; // Skip IOException
-        presetDirectory.MoveTo(Path.Join(OptionManager.OptionPath, $"Preset{newID}"));
+        if (ID == newID) return;
+        string newPath = OperatingSystem.IsAndroid()
+            ? Path.Combine(OptionManager.OptionPath, OptionManager.AndroidOptionFolder, $"Preset{newID}")
+            : Path.Combine(OptionManager.OptionPath, $"Preset{newID}");
+        presetDirectory.MoveTo(newPath);
         presetInfo = presetDirectory.GetFile("config.txt");
         ID = newID;
     }

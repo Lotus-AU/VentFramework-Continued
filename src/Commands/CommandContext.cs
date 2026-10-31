@@ -13,11 +13,13 @@ public class CommandContext
     public string OriginalMessage = null!;
     public string? Alias;
     public string[] Args = null!;
+
+    public string? Prefix;
     // public List<int> ErroredParameters = null!;
 
     internal PlayerControl Source = null!;
     
-    internal CommandContext(PlayerControl source, string message)
+    internal CommandContext(PlayerControl source, string message, string? prefix = null)
     {
         message = message.Trim();
         OriginalMessage = message;
@@ -25,6 +27,7 @@ public class CommandContext
         Alias = split.Length > 0 ? split[0] : string.Empty;
         Args = split.Length > 1 ? split[1..] : Array.Empty<string>();
         Source = source;
+        Prefix = prefix ?? string.Empty;
     }
 
     private CommandContext()

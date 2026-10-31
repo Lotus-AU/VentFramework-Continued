@@ -46,25 +46,18 @@ public static class VentRPC
         Option option = networkedOption.GetOption();
         if (option is NullOption) return;
 
-        string oldText =
-            DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.LobbyChangeSettingNotification, new Il2CppReferenceArray<Il2CppSystem.Object>([
-                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.FullName()}</font>",
-                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.GetValueText()}</font>"
-            ]));
+        string oldText = option.GetChangeMessage();
         option.SetValue(networkedOption.GetIndex());
+        AnnounceChange(oldText, option.GetChangeMessage());
+    }
 
+    internal static void AnnounceChange(string oldText, string newText)
+    {
         if (!HudManager.InstanceExists) return;
-        string newText =
-            DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.LobbyChangeSettingNotification, new Il2CppReferenceArray<Il2CppSystem.Object>([
-                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.FullName()}</font>",
-                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{option.GetValueText()}</font>"
-            ]));
-
         var notifier = HudManager.Instance.Notifier;
 
         if (notifier.activeMessages.ToArray().Any(lnm => lnm.Text.text == oldText))
             notifier.activeMessages.ToArray().First(lnm => lnm.Text.text == oldText).UpdateMessage(newText);
-        
         else
         {
             LobbyNotificationMessage newMessage = Object.Instantiate<LobbyNotificationMessage>(notifier.notificationMessageOrigin, Vector3.zero, Quaternion.identity, notifier.transform);

@@ -8,7 +8,7 @@ public static class NetUtils
     public static ClientData? GetClient(this PlayerControl player)
     {
         if (player == null) return null;
-        var client = AmongUsClient.Instance.allClients.ToArray().FirstOrDefault(cd => cd.Character != null && cd.Character.PlayerId == player.PlayerId);
+        var client = AmongUsClient.Instance.allClients.ToArray().FirstOrDefault(cd => cd.Character  && cd.Character.PlayerId == player.PlayerId);
         return client;
     }
     

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Hazel;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using VentLib.Logging;
 using VentLib.Networking.Interfaces;
 using VentLib.Networking.RPC;
@@ -91,6 +92,7 @@ public class Option: IRpcSendable<Option>
 
     internal object SetValue(OptionValue value)
     {
+        string oldText = GetChangeMessage();
         Index = Optional<int>.NonNull(Values.IndexOf(value));
         if (Index.Get() == -1) Index = Optional<int>.NonNull(DefaultIndex);
         Optional<object> oldValue = Value.Map(v => v.Value);
@@ -99,12 +101,13 @@ public class Option: IRpcSendable<Option>
         
         OptionValueEvent optionValueEvent = new(this, oldValue, value.Value);
         EventHandlers.ForEach(eh => eh(optionValueEvent));
-        SyncOption();
+        SyncOption(oldText);
         return value.Value;
     }
 
     public int SetValue(int index, bool triggerEvent = true)
     {
+        string oldText = GetChangeMessage();
         Index = Optional<int>.NonNull(EnforceIndexConstraint(index));
         Optional<object> oldValue = Value.Map(v => v.Value);
         
@@ -112,7 +115,7 @@ public class Option: IRpcSendable<Option>
 
         OptionValueEvent optionValueEvent = new(this, oldValue, Value.Get().Value);
         if (triggerEvent) EventHandlers.ForEach(eh => eh(optionValueEvent));
-        SyncOption();
+        SyncOption(oldText);
         return index;
     }
 
@@ -192,13 +195,23 @@ public class Option: IRpcSendable<Option>
         writer.Write(Qualifier());
     }
 
-    private void SyncOption()
+    private void SyncOption(string oldText)
     {
         if (PresetManager.IsSwitchingPresets) return; // Fix sending an RPC for every option (it would cause kicks if you had a lot of options!)
+        VentRPC.AnnounceChange(oldText, GetChangeMessage());
         if (!VersionControl.Instance.PassedClients.Any()) return;
         if (Manager == null) return;
         if (!Manager.Flags().HasFlag(OptionManagerFlags.SyncOverRpc)) return;
         _modRPC.Send(null, new VentRPC.NetworkedOption(this, Index.OrElse(0)));
+    }
+
+    internal string GetChangeMessage()
+    {
+        if (!TranslationController.InstanceExists) return string.Empty;
+        return DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.LobbyChangeSettingNotification, new Il2CppReferenceArray<Il2CppSystem.Object>([
+                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{FullName()}</font>",
+                $"<font=\"Barlow-Black SDF\" material=\"Barlow-Black Outline\">{GetValueText()}</font>"
+            ]));
     }
 
     internal bool HasParent() => Parent.Exists();

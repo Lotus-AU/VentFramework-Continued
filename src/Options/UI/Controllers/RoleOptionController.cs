@@ -1,3 +1,4 @@
+extern alias JetbrainsAnnotations;
 using System;
 using System.Linq;
 using UnityEngine;
@@ -7,6 +8,7 @@ using VentLib.Options.Enum;
 using VentLib.Options.Events;
 using VentLib.Options.UI.Tabs;
 using System.Collections.Generic;
+using JetbrainsAnnotations::JetBrains.Annotations;
 using VentLib.Options.Interfaces;
 using VentLib.Options.Extensions;
 using VentLib.Options.UI.Options;
@@ -28,8 +30,8 @@ public static class RoleOptionController
 
     private static readonly List<IGameOptionTab> BuiltinGameTabs =
     [
-        new EngineerTab(), new GuardianAngelTab(), new ScientistTab(), new TrackerTab(), new DetectiveTab(), 
-        new NoisemakerTab(), new ShapeshifterTab(), new PhantomTab(), new ViperTab(),
+        new EngineerTab(), new ScientistTab(), new TrackerTab(), new DetectiveTab(), new JudgeTab(), new NoisemakerTab(), 
+        new GuardianAngelTab(), new SpiritGuideTab(), new ShapeshifterTab(), new PhantomTab(), new ViperTab()
     ];
     private static UnityOptional<RolesSettingsMenu> _lastInitialized = new();
     internal static IRoleOptionRender _renderer = new RoleOptionsRenderer();
@@ -56,8 +58,10 @@ public static class RoleOptionController
 
     internal static IGameOptionTab[] AllTabs(bool allowIgnoredTabs = false) => BuiltinGameTabs.Concat(Tabs).Where(t => allowIgnoredTabs | !t.Ignore()).ToArray();
 
+    [UsedImplicitly]
     public static void Enable() => Enabled = true;
     
+    [UsedImplicitly]
     public static void AddTab(GameOptionTab tab)
     {
         Tabs.Add(tab);
@@ -66,6 +70,7 @@ public static class RoleOptionController
         tab.Show();
     }
 
+    [UsedImplicitly]
     public static void RemoveTab(GameOptionTab tab)
     {
         Tabs.Remove(tab);
@@ -73,11 +78,13 @@ public static class RoleOptionController
         tab.Hide();
     }
 
+    [UsedImplicitly]
     public static void ClearTabs()
     {
         Tabs.ToArray().ForEach(RemoveTab);
     }
 
+    [UsedImplicitly]
     public static void RemoveBuiltInTabs(Type? type = null)
     {
         if (type != null) {
@@ -97,6 +104,8 @@ public static class RoleOptionController
     {
         _tabEvents.Add(eventHandler);
     }
+    
+    internal static void SetInitialized(RolesSettingsMenu menu) => _lastInitialized = UnityOptional<RolesSettingsMenu>.NonNull(menu);
 
     internal static void HandleOpen(RolesSettingsMenu menu)
     {

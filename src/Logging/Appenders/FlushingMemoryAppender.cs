@@ -1,3 +1,4 @@
+extern alias JetbrainsAnnotations;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -6,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using BepInEx;
+using JetbrainsAnnotations::JetBrains.Annotations;
 using UnityEngine;
 using VentLib.Utilities;
 
@@ -55,9 +57,13 @@ public class FlushingMemoryAppender: InMemoryAppender
         flushingThread.Start();
     }
     
+    /// <summary>
+    /// Creates the file on disc for this object.
+    /// </summary>
+    /// <returns>The created logfile as a <see cref="FileInfo"/>.</returns>
     public FileInfo CreateNewFile()
     {
-        return LogFile = LogDirectory.CreateLog(FileNamePattern, TargetDirectory);
+        return LogFile = LogDirectory.CreateLog(FileNamePattern, dir: TargetDirectory);
     }
 
     private void FlushMemory()
@@ -65,33 +71,40 @@ public class FlushingMemoryAppender: InMemoryAppender
         while (autoFlush)
         {
             Thread.Sleep(FlushDelayMilliseconds);
-            if (LogFile == null) continue;
-            
-            FileStream? stream = null;
-
-            List<LogComposite> oldComposites = Composites;
-            Composites = new List<LogComposite>();
-            
-            try
-            {
-                stream = LogFile.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                foreach (LogComposite composite in oldComposites)
-                {
-                    stream.Write(Encoding.GetBytes(composite.ToString(false) + '\n'));
-                }
-                Clear();
-            }
-            catch (Exception exception)
-            {
-                LOG.Exception(exception);
-            }
-            finally
-            {
-                stream?.Flush();
-                stream?.Close();
-                oldComposites.Clear();
-            }
+            ForceFlush();
         }
     }
-    
+
+    /// <summary>
+    /// Forces this log entry to write to the disc and clear all entries from memory.
+    /// </summary>
+    [UsedImplicitly]
+    public void ForceFlush()
+    {
+        if (LogFile == null) return;
+        FileStream? stream = null;
+
+        List<LogComposite> oldComposites = Composites;
+        Composites = new List<LogComposite>();
+            
+        try
+        {
+            stream = LogFile.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            foreach (LogComposite composite in oldComposites)
+            {
+                stream.Write(Encoding.GetBytes(composite.ToString(false) + '\n'));
+            }
+            Clear();
+        }
+        catch (Exception exception)
+        {
+            LOG.Exception(exception);
+        }
+        finally
+        {
+            stream?.Flush();
+            stream?.Close();
+            oldComposites.Clear();
+        }
+    }
 }

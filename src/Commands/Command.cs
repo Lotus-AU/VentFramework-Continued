@@ -10,6 +10,7 @@ namespace VentLib.Commands;
 public class Command
 {
     public string[] Aliases = Array.Empty<string>();
+    public string ForcePrefix = string.Empty;
     public CommandFlag Flags;
     
     internal MethodInfo? Trampoline;

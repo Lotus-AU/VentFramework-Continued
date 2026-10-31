@@ -38,13 +38,46 @@ public class ColorGradient
     public string Apply(string input, int degree = 1)
     {
         if (input.Length == 0) return input;
-        if (input.Length == degree) return colors[0].Colorize(input);
-        float step = 1f / (input.Length - 1);
-        StringBuilder builder = new();
-        for (int i = 0; i < input.Length; i += degree)
+
+        int visibleLength = 0;
+        bool inTag = false;
+        foreach (char c in input)
         {
-            string str = input[i..Math.Min(input.Length, i + degree)];
-            builder.Append(Evaluate(step * i).Colorize(str));
+            if (c == '<') { inTag = true; continue; }
+            if (c == '>') { inTag = false; continue; }
+            if (!inTag) visibleLength++;
+        }
+
+        if (visibleLength == 0) return input;
+        if (visibleLength == degree) return colors[0].Colorize(input);
+
+        float step = 1f / (visibleLength - 1);
+        StringBuilder builder = new();
+        int visibleIndex = 0;
+        int i = 0;
+
+        while (i < input.Length)
+        {
+            if (input[i] == '<')
+            {
+                int tagEnd = input.IndexOf('>', i);
+                if (tagEnd == -1) tagEnd = input.Length - 1; 
+                builder.Append(input, i, tagEnd - i + 1);
+                i = tagEnd + 1;
+                continue;
+            }
+
+            int chunkStart = i;
+            int count = 0;
+            while (count < degree && i < input.Length && input[i] != '<')
+            {
+                i++;
+                count++;
+            }
+
+            string chunk = input[chunkStart..i];
+            builder.Append(Evaluate(step * visibleIndex).Colorize(chunk));
+            visibleIndex += count;
         }
 
         return builder.ToString();

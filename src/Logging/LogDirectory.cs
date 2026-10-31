@@ -42,9 +42,11 @@ public class LogDirectory
     {
         return (dir ?? _directory).EnumerateFiles().Where(f => Regex.IsMatch(f.Name, regex));
     }
-
-    public static FileInfo CreateLog(string filename, DirectoryInfo? dir = null)
+    
+    public static FileInfo CreateLog(string filename, string? stamp = null, DirectoryInfo? dir = null)
     {
+        dir ??= _directory;
+
         FileInfo tmpFile = new(filename);
         
         string dtFormatted = DateTime.Now.ToString(tmpFile.Name.Replace(tmpFile.Extension, ""));
@@ -56,8 +58,18 @@ public class LogDirectory
         }).Fuse("");
         
         dtFormatted = dtFormatted.Replace("##", GetLogs(dtRegex, dir).Count().ToString());
-        FileInfo file = _directory.GetFile(dtFormatted + tmpFile.Extension);
+        FileInfo file = dir.GetFile(dtFormatted + (stamp ?? string.Empty) + tmpFile.Extension);
         if (file.Exists) throw new ConstraintException($"Cannot create log file. File \"{dtFormatted}\" already exists.");
+        file.Create().Close();
+        return file;
+    }
+
+    public static FileInfo CreateCustomLog(string customName, string extension = ".txt", DirectoryInfo? dir = null)
+    {
+        dir ??= _directory;
+        
+        var file = dir.GetFile(customName + extension);
+        if (file.Exists) throw new ConstraintException($"Cannot create log file. File \"{file.Name}\" already exists.");
         file.Create().Close();
         return file;
     }
